@@ -5,6 +5,7 @@
 \usepackage{hyperref}
 \usepackage{amsmath}
 \usepackage{siunitx}
+\usepackage{float}
 \usepackage{enumitem}
 
 \title{CV8502 Assignment 2 \\ Fairness \& Interpretability in Medical AI}
@@ -121,12 +122,19 @@ Table~\ref{tab:mitigation} compares macro test metrics and fairness gaps for the
   \end{tabular}
 \end{table}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.6\textwidth]{outputs/outputs/figures/fig_fairness_gaps.png}
+  \caption{Fairness gaps (DP, EO, EOds) across the three methods. Both mitigations substantially reduce EO/EOds relative to the baseline.}
+  \label{fig:fairness_gaps}
+\end{figure}
+
 Reweighting slightly reduces AUROC/AUPRC and F1, as expected when emphasizing the minority group, but substantially improves equalized odds (EOds from 0.0140 to 0.0060). GroupDRO achieves similar AUROC/AUPRC to the baseline, with a more noticeable drop in F1 (due to conservative thresholding) but the smallest DP and EOds gaps. In short, both mitigations trade a small amount of global accuracy for improved group fairness, with GroupDRO giving the lowest worst-case gap.
 
 \subsection{Calibration and Thresholds}
-For the baseline model, the expected calibration error (ECE) on the test set is reduced from 0.088 to 0.047 by temperature scaling with a single scalar $T\approx 1.49$, without changing AUROC or AUPRC. Reliability diagrams (not shown) confirm that overconfidence at high predicted probabilities is reduced.
+For the baseline model, the expected calibration error (ECE) on the test set is reduced from 0.088 to 0.047 by temperature scaling with a single scalar $T\approx 1.49$, without changing AUROC or AUPRC. This improvement indicates that the model becomes less overconfident at high predicted probabilities.
 
-Table~\ref{tab:calib} summarizes group-wise calibration and 95\% specificity thresholds. For the baseline model, ECE is slightly lower for females than males, and the threshold needed to reach 95\% specificity is almost identical across sex. Reweighting and GroupDRO trade modestly worse calibration for improved fairness: ECE rises into the 0.10--0.11 range and the operating thresholds shift by only a few hundredths. Overall, differences in calibration and thresholds between groups remain small relative to the gains in EO/EOds, suggesting that a single global threshold is not strongly unfair for sex in this setting, although group-specific operating points could still be adopted in deployment.
+Table~\ref{tab:calib} summarizes group-wise calibration and 95\% specificity thresholds. For the baseline model, ECE is slightly lower for females than males, and the threshold needed to reach 95\% specificity is almost identical across sex. Reweighting and GroupDRO trade modestly worse calibration for improved fairness: ECE rises into the 0.10--0.11 range and the operating thresholds shift by only a few hundredths. Overall, differences in calibration and thresholds between groups remain small relative to the gains in EO/EOds, suggesting that a single global threshold is not strongly unfair for sex in this setting, although group-specific operating points could still be adopted in deployment. Figure~\ref{fig:reliability} visualizes these effects for the baseline model, comparing uncalibrated logits, temperature scaling, and MC-Dropout.
 
 \begin{table}[h]
   \centering
@@ -143,10 +151,27 @@ Table~\ref{tab:calib} summarizes group-wise calibration and 95\% specificity thr
   \end{tabular}
 \end{table}
 
+\begin{figure}[H]
+  \centering
+  \small
+  \includegraphics[width=0.32\textwidth]{outputs/outputs/calibration_baseline/reliability_uncal.png}
+  \includegraphics[width=0.32\textwidth]{outputs/outputs/calibration_baseline/reliability_temp_scaled.png}
+  \includegraphics[width=0.32\textwidth]{outputs/outputs/calibration_baseline/reliability_mc_dropout.png}
+  \caption{Reliability diagrams for the baseline model: uncalibrated (left), temperature-scaled (middle), and MC-Dropout (right). Temperature scaling visibly moves points closer to the diagonal and reduces ECE, while MC-Dropout improves uncertainty estimates without fully correcting miscalibration.}
+  \label{fig:reliability}
+\end{figure}
+
 \subsection{Perturbation Stability}
 To probe robustness of predictions and explanations, I evaluate the baseline model on test images with mild Gaussian noise and brightness/contrast perturbations of $\pm 10\%$. Clean performance (macro AUROC 0.883, AUPRC 0.524, F1 0.483, TPR@95\%Spec 0.478) drops substantially under these perturbations: AUROC 0.618, AUPRC 0.181, F1 0.009, TPR@95\%Spec 0.107.
 
 This indicates that even modest distribution shifts can significantly degrade operating-point sensitivity, which is relevant for real-world deployment where acquisition protocols and noise characteristics vary. In the report discussion, these results can be connected to the visual stability of Grad-CAM maps under the same perturbations.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.6\textwidth]{outputs/outputs/figures/fig_perturbation.png}
+  \caption{Baseline robustness to mild perturbations. Clean test performance is compared to performance on images with small noise and brightness/contrast changes. All metrics degrade markedly, especially F1 and TPR@95\% specificity.}
+  \label{fig:perturbation}
+\end{figure}
 
 \subsection{Explainability and Interplay with Fairness}
 To make the classifier's decisions more interpretable, I compute gradient-based class activation maps (CAMs) and Integrated Gradients (IG) for the Effusion logit. Intuitively, these maps highlight image regions where small changes in pixel intensity would most increase the model's confidence in the positive class. Warm colors (red/yellow) indicate regions that strongly support the effusion prediction, while cool colors (blue) indicate less influential areas.
@@ -159,7 +184,7 @@ Under mild noise and brightness/contrast perturbations, CAM and IG remain qualit
 
 As a simple sanity test, I randomized the classifier head of the baseline model while keeping earlier layers fixed and recomputed CAM and IG. The resulting maps become diffuse, noisy, and poorly aligned with anatomical structures, even though the underlying X-ray is unchanged. This behavior is consistent with the expectation that meaningful explanations should disappear when the model's decision function is destroyed.
 
-\begin{figure}[h]
+\begin{figure}[H]
   \centering
   \includegraphics[width=0.3\textwidth]{outputs/outputs/explain_baseline_before/exp_test_0000.png}
   \includegraphics[width=0.3\textwidth]{outputs/outputs/explain_reweight/exp_test_0000.png}
@@ -168,7 +193,7 @@ As a simple sanity test, I randomized the classifier head of the baseline model 
   \label{fig:case1}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[H]
   \centering
   \includegraphics[width=0.3\textwidth]{outputs/outputs/explain_baseline_before/exp_test_0003.png}
   \includegraphics[width=0.3\textwidth]{outputs/outputs/explain_reweight/exp_test_0003.png}

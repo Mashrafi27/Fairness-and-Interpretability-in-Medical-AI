@@ -725,7 +725,9 @@ def explain(args):
             to_concat = [cam_overlay]
             names = [f"cam"]
             if ig_maps is not None:
-                ig_overlay = _overlay_heatmap(img_np, ig_maps[i])
+                # Use a stronger overlay (lower alpha) for IG so attributions
+                # remain visible even in darker regions of the X-ray.
+                ig_overlay = _overlay_heatmap(img_np, ig_maps[i], alpha=0.25)
                 to_concat.append(ig_overlay)
                 names.append("ig")
             combined = np.concatenate(to_concat, axis=1)
