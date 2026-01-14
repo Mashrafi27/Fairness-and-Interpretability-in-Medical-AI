@@ -1,4 +1,4 @@
-# CV8502 A2 — Fairness & Interpretability
+# Fairness & Interpretability Analysis for Medical Image AI
 
 Reference implementation for CV8502 Assignment 2 (Fairness & Interpretability in Medical AI). The repository provides:
 
